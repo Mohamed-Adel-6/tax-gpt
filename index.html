@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Tax</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- ريسبونسف -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      direction: rtl;
+    }
+    .container {
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 500px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #333;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    button {
+      background: #007bff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      margin-top: 15px;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      line-height: 1.6;
+    }
+    .box {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 15px;
+    }
+    .box h3 {
+      margin: 0 0 10px;
+      color: #007bff;
+      font-size: 16px;
+    }
+    footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 14px;
+      color: #555;
+    }
+    footer span {
+      color: red;
+    }
+    @media (max-width: 600px) {
+      .container {
+        padding: 15px;
+      }
+      h2 {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Smart Tax</h2>
+    <label for="grossIncome">رقم الأعمال (جنيه):</label>
+    <input type="number" id="grossIncome" placeholder="أدخل رقم الأعمال" min="0">
+
+    <label for="percentage">نسبة الربح (%):</label>
+    <input type="number" id="percentage" placeholder="أدخل نسبة الربح" min="0">
+
+    <label for="year">اختر السنة:</label>
+    <select id="year"></select>
+
+    <button onclick="calculateTax()">احسب</button>
+
+    <div id="output" class="result"></div>
+  </div>
+
+  <footer>
+    © Made with <span>❤️</span> by Mohamed Adel
+  </footer>
+
+  <script>
+    // ملء القائمة بالسنوات من 2005 لحد 2024
+    const yearSelect = document.getElementById("year");
+    for (let y = 2005; y <= 2024; y++) {
+      let opt = document.createElement("option");
+      opt.value = y;
+      opt.textContent = y;
+      yearSelect.appendChild(opt);
+    }
+
+    // جدول الإعفاءات
+    const exemptions = {
+      2005: 5000, 2006: 5000, 2007: 5000, 2008: 5000, 2009: 5000,
+      2010: 5000, 2011: 5000, 2012: 5000, 2013: 5000, 2014: 5000,
+      2015: 6500, 2016: 5000, 2017: 7200, 2018: 8000, 2019: 8000,
+      2020: 15000, 2021: 15000, 2022: 15000, 2023: 30000, 2024: 40000
+    };
+
+    function taxLaw3(grossIncome) {
+      if (grossIncome < 250000) return 1000;
+      if (grossIncome < 500000) return 2500;
+      if (grossIncome < 1000000) return 5000;
+      if (grossIncome < 2000000) return Math.ceil(grossIncome * 0.005);
+      if (grossIncome < 3000000) return Math.ceil(grossIncome * 0.0075);
+      if (grossIncome < 10000000) return Math.ceil(grossIncome * 0.01);
+      return "لا يخضع لمادة 3";
+    }
+
+    function taxLaw91(netIncome, year) {
+      let exemption = exemptions[year] || 0;
+      let taxableIncome = netIncome - exemption;
+      if (taxableIncome < 0) taxableIncome = 0;
+
+      if (taxableIncome === 0) return { tax: 0, exemption, taxableIncome };
+
+      let tax = 0;
+      if (year >= 2005 && year <= 2010) {
+        let remaining = taxableIncome;
+
+        let slab1 = Math.min(15000, remaining);
+        tax += slab1 * 0.1;
+        remaining -= slab1;
+
+        if (remaining > 0) {
+          let slab2 = Math.min(20000, remaining);
+          tax += slab2 * 0.15;
+          remaining -= slab2;
+        }
+
+        if (remaining > 0) {
+          tax += remaining * 0.2;
+        }
+      } else {
+        tax = taxableIncome * 0.15; // تبسيط للسنوات الأخرى
+      }
+
+      return { tax: Math.ceil(tax), exemption, taxableIncome };
+    }
+
+    function calculateTax() {
+      let grossIncome = parseFloat(document.getElementById("grossIncome").value);
+      let percentage = parseFloat(document.getElementById("percentage").value) / 100;
+      const year = parseInt(document.getElementById("year").value);
+
+      if (isNaN(grossIncome) || isNaN(percentage) || grossIncome < 0 || percentage < 0) {
+        document.getElementById("output").textContent = "من فضلك أدخل قيم صحيحة (غير سالبة).";
+        return;
+      }
+
+      let netIncome = grossIncome * percentage;
+      if (netIncome < 0) netIncome = 0;
+
+      const tax3 = taxLaw3(grossIncome);
+      const law91 = taxLaw91(netIncome, year);
+
+      let decision = "";
+      if (typeof tax3 === "number") {
+        decision = (tax3 < law91.tax)
+          ? "الأفضل: مادة 3 (أقل ضريبة)"
+          : "الأفضل: قانون 91 (أقل ضريبة)";
+      } else {
+        decision = "يتم تطبيق قانون 91 فقط.";
+      }
+
+      document.getElementById("output").innerHTML = `
+        <div class="box">
+          <h3>📌 بيانات أساسية</h3>
+          <strong>رقم الأعمال:</strong> ${grossIncome.toLocaleString()} جنيه<br>
+          <strong>صافي الدخل:</strong> ${netIncome.toLocaleString()} جنيه
+        </div>
+
+        <div class="box">
+          <h3>📌 مادة 3</h3>
+          <strong>ضريبة مادة 3:</strong> ${typeof tax3 === "number" ? tax3.toLocaleString() + " جنيه" : tax3}
+        </div>
+
+        <div class="box">
+          <h3>📌 قانون 91</h3>
+          <strong>الإعفاء (${year}):</strong> ${law91.exemption.toLocaleString()} جنيه<br>
+          <strong>الدخل الخاضع:</strong> ${law91.taxableIncome.toLocaleString()} جنيه<br>
+          <strong>ضريبة قانون 91:</strong> ${law91.tax.toLocaleString()} جنيه
+        </div>
+
+        <div class="box">
+          <h3>📌 القرار النهائي</h3>
+          <strong style="color:#007bff;">${decision}</strong>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
