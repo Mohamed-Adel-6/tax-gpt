@@ -1,228 +1,1207 @@
 <!DOCTYPE html>
 <html lang="ar">
-<head>
-  <meta charset="UTF-8">
-  <title>Smart Tax</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- ريسبونسف -->
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f9;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      min-height: 100vh;
-      margin: 0;
-      padding: 20px;
-      direction: rtl;
-    }
-    .container {
-      background: #fff;
-      padding: 25px;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      width: 100%;
-      max-width: 500px;
-    }
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #333;
-    }
-    label {
-      display: block;
-      margin-top: 10px;
-      font-weight: bold;
-    }
-    input, select, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 14px;
-      box-sizing: border-box;
-    }
-    button {
-      background: #007bff;
-      color: #fff;
-      border: none;
-      cursor: pointer;
-      margin-top: 15px;
-      transition: 0.3s;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-    .result {
-      margin-top: 20px;
-      padding: 15px;
-      background: #f9f9f9;
-      border-radius: 8px;
-      line-height: 1.6;
-    }
-    .box {
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 12px;
-      margin-bottom: 15px;
-    }
-    .box h3 {
-      margin: 0 0 10px;
-      color: #007bff;
-      font-size: 16px;
-    }
-    footer {
-      text-align: center;
-      margin-top: 20px;
-      font-size: 14px;
-      color: #555;
-    }
-    footer span {
-      color: red;
-    }
-    @media (max-width: 600px) {
-      .container {
-        padding: 15px;
+  <head>
+    <meta charset="utf-8" />
+    <title>Smart Tax Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- html2canvas and jsPDF for PDF export -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+      :root {
+        --primary: #007bff;
+        --primary-dark: #0056b3;
+        --bg: #f4f6f9;
+        --card: #fff;
+        --muted: #666;
+        --border: #e6e9ef;
+        --success: #2ecc71;
+        --danger: #e74c3c;
+        --box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
       }
-      h2 {
+      [data-theme="dark"] {
+        --primary: #3fa7ff;
+        --primary-dark: #2b8ad6;
+        --bg: #0f1724;
+        --card: #0b1220;
+        --muted: #b8c2ce;
+        --border: #1f2b3a;
+        --box-shadow: none;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        direction: rtl;
+        margin: 0;
+        padding: 18px;
+        background: var(--bg);
+        color: var(--muted);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+      }
+      .wrap {
+        width: 100%;
+        max-width: 1100px;
+      }
+      header.site {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .brand {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .logo {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--primary), #00aaff);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        box-shadow: var(--box-shadow);
+        font-size: 18px;
+      }
+      h1 {
+        margin: 0;
         font-size: 20px;
+        color: var(--muted);
       }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h2>Smart Tax</h2>
-    <label for="grossIncome">رقم الأعمال (جنيه):</label>
-    <input type="number" id="grossIncome" placeholder="أدخل رقم الأعمال" min="0">
+      .controls {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
 
-    <label for="percentage">نسبة الربح (%):</label>
-    <input type="number" id="percentage" placeholder="أدخل نسبة الربح" min="0">
+      main.grid {
+        display: grid;
+        grid-template-columns: 1fr 420px;
+        gap: 18px;
+        align-items: start;
+      }
 
-    <label for="year">اختر السنة:</label>
-    <select id="year"></select>
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: var(--box-shadow);
+      }
 
-    <button onclick="calculateTax()">احسب</button>
+      label {
+        display: block;
+        margin-top: 10px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+      input[type="number"],
+      select,
+      input[type="text"] {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        margin-top: 6px;
+        background: transparent;
+        color: inherit;
+      }
 
-    <div id="output" class="result"></div>
-  </div>
+      .row {
+        display: flex;
+        gap: 10px;
+      }
+      .col {
+        flex: 1;
+      }
+      .small {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+      .btn {
+        padding: 10px;
+        border-radius: 10px;
+        border: 0;
+        background: var(--primary);
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+        margin-top: 12px;
+        width: 100%;
+      }
+      .btn.secondary {
+        background: transparent;
+        color: var(--primary);
+        border: 1px dashed var(--border);
+        font-weight: 600;
+      }
+      .btn.small {
+        padding: 8px;
+        border-radius: 8px;
+        width: auto;
+      }
 
-  <footer>
-    © Made with <span>❤️</span> by Mohamed Adel
-  </footer>
+      .result {
+        margin-top: 12px;
+      }
+      .box {
+        background: var(--card);
+        border: 1px solid var(--border);
+        padding: 10px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+      }
+      .box h3 {
+        margin: 0 0 8px;
+        color: var(--primary);
+        font-size: 15px;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .value {
+        font-weight: 700;
+        color: inherit;
+      }
 
-  <script>
-    // ملء القائمة بالسنوات من 2005 لحد 2024
-    const yearSelect = document.getElementById("year");
-    for (let y = 2005; y <= 2024; y++) {
-      let opt = document.createElement("option");
-      opt.value = y;
-      opt.textContent = y;
-      yearSelect.appendChild(opt);
-    }
+      footer {
+        margin-top: 16px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      footer span {
+        color: var(--danger);
+      }
 
-    // جدول الإعفاءات
-    const exemptions = {
-      2005: 5000, 2006: 5000, 2007: 5000, 2008: 5000, 2009: 5000,
-      2010: 5000, 2011: 5000, 2012: 5000, 2013: 5000, 2014: 5000,
-      2015: 6500, 2016: 5000, 2017: 7200, 2018: 8000, 2019: 8000,
-      2020: 15000, 2021: 15000, 2022: 15000, 2023: 30000, 2024: 40000
-    };
+      /* extra panels */
+      .chart-wrap {
+        height: 220px;
+      }
+      .reports-list {
+        max-height: 220px;
+        overflow: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      td,
+      th {
+        padding: 8px;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+        text-align: right;
+      }
+      th {
+        background: transparent;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .tags {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
 
-    function taxLaw3(grossIncome) {
-      if (grossIncome < 250000) return 1000;
-      if (grossIncome < 500000) return 2500;
-      if (grossIncome < 1000000) return 5000;
-      if (grossIncome < 2000000) return Math.ceil(grossIncome * 0.005);
-      if (grossIncome < 3000000) return Math.ceil(grossIncome * 0.0075);
-      if (grossIncome < 10000000) return Math.ceil(grossIncome * 0.01);
-      return "لا يخضع لمادة 3";
-    }
+      .chip {
+        padding: 6px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        font-size: 13px;
+        background: transparent;
+      }
 
-    function taxLaw91(netIncome, year) {
-      let exemption = exemptions[year] || 0;
-      let taxableIncome = netIncome - exemption;
-      if (taxableIncome < 0) taxableIncome = 0;
-
-      if (taxableIncome === 0) return { tax: 0, exemption, taxableIncome };
-
-      let tax = 0;
-      if (year >= 2005 && year <= 2010) {
-        let remaining = taxableIncome;
-
-        let slab1 = Math.min(15000, remaining);
-        tax += slab1 * 0.1;
-        remaining -= slab1;
-
-        if (remaining > 0) {
-          let slab2 = Math.min(20000, remaining);
-          tax += slab2 * 0.15;
-          remaining -= slab2;
+      /* responsive */
+      @media (max-width: 1024px) {
+        main.grid {
+          grid-template-columns: 1fr 360px;
         }
-
-        if (remaining > 0) {
-          tax += remaining * 0.2;
+      }
+      @media (max-width: 840px) {
+        main.grid {
+          grid-template-columns: 1fr;
+          padding-bottom: 40px;
         }
-      } else {
-        tax = taxableIncome * 0.15; // تبسيط للسنوات الأخرى
       }
 
-      return { tax: Math.ceil(tax), exemption, taxableIncome };
-    }
+      /* subtle animation */
+      .loading {
+        opacity: 0.7;
+        transform: scale(0.995);
+        transition: all 0.12s;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="site">
+        <div class="brand">
+          <div class="logo">ST</div>
+          <div>
+            <h1>Smart Tax Pro</h1>
+            <div class="small muted">حاسبة ضريبية ذكية — مصر</div>
+          </div>
+        </div>
 
-    function calculateTax() {
-      let grossIncome = parseFloat(document.getElementById("grossIncome").value);
-      let percentage = parseFloat(document.getElementById("percentage").value) / 100;
-      const year = parseInt(document.getElementById("year").value);
+        <div class="controls">
+          <button class="btn small secondary" id="clearAll">
+            مسح البيانات
+          </button>
+          <button class="btn small" id="exportPdf">تحميل PDF</button>
+          <div style="width: 10px"></div>
+          <label style="display: flex; align-items: center; gap: 6px">
+            <input type="checkbox" id="darkToggle" />
+            <span class="small">Dark</span>
+          </label>
+        </div>
+      </header>
 
-      if (isNaN(grossIncome) || isNaN(percentage) || grossIncome < 0 || percentage < 0) {
-        document.getElementById("output").textContent = "من فضلك أدخل قيم صحيحة (غير سالبة).";
-        return;
+      <main class="grid">
+        <!-- left: inputs + results -->
+        <section>
+          <div class="card">
+            <h2 style="margin: 0 0 8px; color: var(--muted)">إدخال البيانات</h2>
+
+            <label for="grossIncome">رقم الأعمال (جنيه)</label>
+            <input
+              id="grossIncome"
+              type="number"
+              min="0"
+              placeholder="مثال: 120000"
+            />
+
+            <label for="percentage">نسبة الربح (%)</label>
+            <input
+              id="percentage"
+              type="number"
+              min="0"
+              placeholder="مثال: 20"
+            />
+
+            <label for="year">اختر السنة</label>
+            <select id="year"></select>
+
+            <div
+              style="
+                margin-top: 10px;
+                display: flex;
+                gap: 8px;
+                align-items: center;
+              "
+            >
+              <input id="hasDeduction" type="checkbox" />
+              <label style="margin: 0"
+                >هل لديك مبالغ مخصومة تحت حساب الضريبة؟</label
+              >
+            </div>
+
+            <div id="deductionRow" style="display: none">
+              <label for="deductionAmount"
+                >المبلغ المخصوم تحت حساب الضريبة (جنيه)</label
+              >
+              <input
+                id="deductionAmount"
+                type="number"
+                min="0"
+                placeholder="مثال: 10000"
+              />
+              <div class="small muted">
+                سيُخصم هذا المبلغ من ضريبة قانون 91.
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 8px; margin-top: 12px">
+              <button id="calcBtn" class="btn">احسب</button>
+              <button id="saveReport" class="btn secondary">حفظ تقرير</button>
+            </div>
+
+            <div class="small muted" style="margin-top: 8px">
+              الحفظ المحلي: البيانات والتقارير تُخزن داخل المتصفح (Local
+              Storage).
+            </div>
+          </div>
+
+          <div class="card result" id="resultCard" aria-live="polite">
+            <!-- النتائج ستظهر هنا -->
+            <div class="box" id="basicBox">
+              <h3>📌 بيانات أساسية</h3>
+              <div class="muted">لا توجد نتائج حتى الآن.</div>
+            </div>
+
+            <div class="box" id="law3Box" style="display: none">
+              <h3>📌 مادة 3</h3>
+              <div>
+                <span class="muted">قيمة ضريبة مادة 3:</span>
+                <span class="value" id="tax3Val">-</span>
+              </div>
+              <div id="law3Note" class="small muted"></div>
+            </div>
+
+            <div class="box" id="law91Box" style="display: none">
+              <h3>📌 قانون 91 (التفاصيل)</h3>
+              <div>
+                <span class="muted">الإعفاء:</span>
+                <span class="value" id="expVal">-</span> جنيه
+              </div>
+              <div>
+                <span class="muted">الدخل الخاضع:</span>
+                <span class="value" id="taxableVal">-</span> جنيه
+              </div>
+              <div>
+                <span class="muted">الضريبة قبل الخصم:</span>
+                <span class="value" id="tax91Before">-</span> جنيه
+              </div>
+              <div>
+                <span class="muted">المبلغ المخصوم:</span>
+                <span class="value" id="deductionVal">-</span> جنيه
+              </div>
+              <div>
+                <span class="muted">صافي ضريبة 91 (بعد الخصم):</span>
+                <span class="value" id="tax91After">-</span> جنيه
+              </div>
+              <div>
+                <span class="muted">الرصيد الدائن المرحل للسنة القادمة:</span>
+                <span class="value" id="carriedVal">-</span> جنيه
+              </div>
+            </div>
+
+            <div class="box" id="decisionBox" style="display: none">
+              <h3>📌 القرار النهائي</h3>
+              <div class="value" id="decisionText">-</div>
+              <div
+                id="smartNote"
+                class="small muted"
+                style="margin-top: 8px"
+              ></div>
+            </div>
+
+            <div class="box" id="accountantBox" style="display: none">
+              <h3>🧾 وضع المحاسب (تفصيلي)</h3>
+              <div id="accountantSteps" class="small muted"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- right: charts + reports -->
+        <aside>
+          <div class="card">
+            <h3 style="margin-top: 0">📊 مقارنة سريعة</h3>
+            <div class="chart-wrap">
+              <canvas id="compChart" width="400" height="220"></canvas>
+            </div>
+            <div class="small muted" style="margin-top: 8px">
+              بار يقارن بين ضريبة مادة 3 وصافي ضريبة 91
+            </div>
+          </div>
+
+          <div class="card" style="margin-top: 12px">
+            <h3 style="margin-top: 0">💾 التقارير المحفوظة</h3>
+            <div class="reports-list" id="reportsList">
+              <div class="small muted">لا توجد تقارير محفوظة.</div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top: 12px">
+            <h3 style="margin-top: 0">🔧 خيارات</h3>
+            <div class="tags">
+              <button id="toggleAccountant" class="chip">وضع المحاسب</button>
+              <button id="compareYearsBtn" class="chip">
+                إضافة للمقارنة المتعددة
+              </button>
+              <button id="clearComparisons" class="chip">مسح المقارنات</button>
+            </div>
+            <div class="small muted" style="margin-top: 8px">
+              قارن نتائج لسنوات متعددة أو فعّل وضع المحاسب لعرض خطوات الحساب.
+            </div>
+          </div>
+        </aside>
+      </main>
+
+      <footer>© Made with <span>❤️</span> by Mohamed Adel</footer>
+    </div>
+
+    <script>
+      // -------------------------
+      // Helpers & initial setup
+      // -------------------------
+      const yearSelect = document.getElementById("year");
+      for (let y = 2005; y <= 2024; y++) {
+        const opt = document.createElement("option");
+        opt.value = y;
+        opt.textContent = y;
+        yearSelect.appendChild(opt);
+      }
+      const currentYear = new Date().getFullYear();
+      if (currentYear >= 2005 && currentYear <= 2024)
+        yearSelect.value = currentYear;
+
+      // elements
+      const grossInput = document.getElementById("grossIncome");
+      const percInput = document.getElementById("percentage");
+      const hasDeduction = document.getElementById("hasDeduction");
+      const deductionRow = document.getElementById("deductionRow");
+      const deductionInput = document.getElementById("deductionAmount");
+      const calcBtn = document.getElementById("calcBtn");
+      const clearAll = document.getElementById("clearAll");
+      const exportPdf = document.getElementById("exportPdf");
+      const saveReport = document.getElementById("saveReport");
+      const reportsList = document.getElementById("reportsList");
+      const resultCard = document.getElementById("resultCard");
+      const compChartCtx = document
+        .getElementById("compChart")
+        .getContext("2d");
+      const toggleAccountant = document.getElementById("toggleAccountant");
+      const compareYearsBtn = document.getElementById("compareYearsBtn");
+      const clearComparisons = document.getElementById("clearComparisons");
+      const darkToggle = document.getElementById("darkToggle");
+
+      // result fields
+      const basicBox = document.getElementById("basicBox");
+      const law3Box = document.getElementById("law3Box");
+      const law91Box = document.getElementById("law91Box");
+      const decisionBox = document.getElementById("decisionBox");
+      const accountantBox = document.getElementById("accountantBox");
+
+      const tax3Val = document.getElementById("tax3Val");
+      const law3Note = document.getElementById("law3Note");
+
+      const expVal = document.getElementById("expVal");
+      const taxableVal = document.getElementById("taxableVal");
+      const tax91Before = document.getElementById("tax91Before");
+      const deductionVal = document.getElementById("deductionVal");
+      const tax91After = document.getElementById("tax91After");
+      const carriedVal = document.getElementById("carriedVal");
+
+      const decisionText = document.getElementById("decisionText");
+      const smartNote = document.getElementById("smartNote");
+      const accountantSteps = document.getElementById("accountantSteps");
+
+      // local storage keys
+      const LS_KEY_INPUTS = "smarttax_inputs_v1";
+      const LS_KEY_REPORTS = "smarttax_reports_v1";
+      const LS_KEY_COMPARISONS = "smarttax_comparisons_v1";
+      const LS_KEY_THEME = "smarttax_theme_v1";
+
+      // exemptions table
+      const exemptions = {
+        2005: 5000,
+        2006: 5000,
+        2007: 5000,
+        2008: 5000,
+        2009: 5000,
+        2010: 5000,
+        2011: 5000,
+        2012: 5000,
+        2013: 5000,
+        2014: 5000,
+        2015: 6500,
+        2016: 5000,
+        2017: 7200,
+        2018: 8000,
+        2019: 8000,
+        2020: 15000,
+        2021: 15000,
+        2022: 15000,
+        2023: 30000,
+        2024: 40000,
+      };
+
+      // comparisons storage
+      let comparisons = JSON.parse(
+        localStorage.getItem(LS_KEY_COMPARISONS) || "[]"
+      );
+
+      // chart initial
+      let chart = new Chart(compChartCtx, {
+        type: "bar",
+        data: {
+          labels: ["مادة 3", "قانون 91 (بعد الخصم)"],
+          datasets: [
+            {
+              label: "جنيه",
+              data: [0, 0],
+              backgroundColor: ["#2d9cdb", "#6fcf97"],
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+        },
+      });
+
+      // -------------------------
+      // Prevent negative entries
+      // -------------------------
+      [grossInput, percInput, deductionInput].forEach((inp) => {
+        inp.addEventListener("input", () => {
+          if (inp.value === "") return;
+          let n = Number(inp.value);
+          if (isNaN(n) || n < 0) inp.value = 0;
+        });
+      });
+
+      // toggle deduction input
+      hasDeduction.addEventListener("change", () => {
+        deductionRow.style.display = hasDeduction.checked ? "block" : "none";
+        if (!hasDeduction.checked) deductionInput.value = "";
+      });
+
+      // dark mode
+      (function () {
+        const saved = localStorage.getItem(LS_KEY_THEME);
+        if (saved === "dark") {
+          document.documentElement.setAttribute("data-theme", "dark");
+          darkToggle.checked = true;
+        }
+        darkToggle.addEventListener("change", () => {
+          if (darkToggle.checked) {
+            document.documentElement.setAttribute("data-theme", "dark");
+            localStorage.setItem(LS_KEY_THEME, "dark");
+          } else {
+            document.documentElement.removeAttribute("data-theme");
+            localStorage.setItem(LS_KEY_THEME, "light");
+          }
+        });
+      })();
+
+      // -------------------------
+      // Core calculation functions
+      // -------------------------
+      function calcTax3(gross) {
+        if (!gross || gross <= 0) return 0;
+        if (gross < 250000) return 1000;
+        if (gross < 500000) return 2500;
+        if (gross < 1000000) return 5000;
+        if (gross < 2000000) return Math.ceil(gross * 0.005);
+        if (gross < 3000000) return Math.ceil(gross * 0.0075);
+        if (gross < 10000000) return Math.ceil(gross * 0.01);
+        return NaN;
       }
 
-      let netIncome = grossIncome * percentage;
-      if (netIncome < 0) netIncome = 0;
+      function calcLaw91(netIncome, year) {
+        const exemption = exemptions[year] || 0;
+        let taxable = netIncome - exemption;
+        if (taxable <= 0) taxable = 0;
+        if (taxable === 0) return { taxBeforeDeduction: 0, exemption, taxable };
 
-      const tax3 = taxLaw3(grossIncome);
-      const law91 = taxLaw91(netIncome, year);
-
-      let decision = "";
-      if (typeof tax3 === "number") {
-        decision = (tax3 < law91.tax)
-          ? "الأفضل: مادة 3 (أقل ضريبة)"
-          : "الأفضل: قانون 91 (أقل ضريبة)";
-      } else {
-        decision = "يتم تطبيق قانون 91 فقط.";
+        let tax = 0;
+        if (year >= 2005 && year <= 2010) {
+          let rem = taxable;
+          const slab1 = Math.min(15000, rem);
+          tax += slab1 * 0.1;
+          rem -= slab1;
+          if (rem > 0) {
+            const slab2 = Math.min(20000, rem);
+            tax += slab2 * 0.15;
+            rem -= slab2;
+          }
+          if (rem > 0) tax += rem * 0.2;
+        } else {
+          tax = taxable * 0.15;
+        }
+        return { taxBeforeDeduction: Math.ceil(tax), exemption, taxable };
       }
 
-      document.getElementById("output").innerHTML = `
-        <div class="box">
-          <h3>📌 بيانات أساسية</h3>
-          <strong>رقم الأعمال:</strong> ${grossIncome.toLocaleString()} جنيه<br>
-          <strong>صافي الدخل:</strong> ${netIncome.toLocaleString()} جنيه
-        </div>
+      // make number safe
+      function safeNum(v) {
+        v = Number(v);
+        return isNaN(v) ? 0 : v;
+      }
 
-        <div class="box">
-          <h3>📌 مادة 3</h3>
-          <strong>ضريبة مادة 3:</strong> ${typeof tax3 === "number" ? tax3.toLocaleString() + " جنيه" : tax3}
-        </div>
+      // -------------------------
+      // Display & logic
+      // -------------------------
+      function renderEmpty() {
+        basicBox.innerHTML = `<h3>📌 بيانات أساسية</h3><div class="muted">لا توجد نتائج حتى الآن.</div>`;
+        law3Box.style.display =
+          law91Box.style.display =
+          decisionBox.style.display =
+          accountantBox.style.display =
+            "none";
+        updateChart(0, 0);
+      }
 
-        <div class="box">
-          <h3>📌 قانون 91</h3>
-          <strong>الإعفاء (${year}):</strong> ${law91.exemption.toLocaleString()} جنيه<br>
-          <strong>الدخل الخاضع:</strong> ${law91.taxableIncome.toLocaleString()} جنيه<br>
-          <strong>ضريبة قانون 91:</strong> ${law91.tax.toLocaleString()} جنيه
-        </div>
+      function updateChart(val3, val91) {
+        chart.data.datasets[0].data = [val3, val91];
+        chart.update();
+      }
 
-        <div class="box">
-          <h3>📌 القرار النهائي</h3>
-          <strong style="color:#007bff;">${decision}</strong>
-        </div>
+      function showResults(state) {
+        // state contains all computed fields
+        basicBox.innerHTML = `
+        <h3>📌 بيانات أساسية</h3>
+        <div><span class="muted">رقم الأعمال:</span> <span class="value">${state.gross.toLocaleString()}</span> جنيه</div>
+        <div><span class="muted">نسبة الربح:</span> <span class="value">${(
+          state.perc * 100
+        ).toLocaleString()}</span> %</div>
+        <div><span class="muted">صافي الدخل:</span> <span class="value">${Math.ceil(
+          state.netIncome
+        ).toLocaleString()}</span> جنيه</div>
       `;
-    }
-  </script>
-</body>
+        // law3
+        law3Box.style.display = "block";
+        tax3Val.textContent = isNaN(state.tax3)
+          ? "لا يخضع لمادة 3"
+          : state.tax3.toLocaleString() + " جنيه";
+        law3Note.textContent = isNaN(state.tax3)
+          ? "حجم أعمالك يتجاوز نطاق مادة 3."
+          : "";
+
+        // law91
+        law91Box.style.display = "block";
+        expVal.textContent = state.exemption.toLocaleString();
+        taxableVal.textContent = Math.ceil(state.taxable).toLocaleString();
+        tax91Before.textContent = state.tax91Before.toLocaleString();
+        deductionVal.textContent = state.deduction.toLocaleString();
+        tax91After.textContent = state.tax91After.toLocaleString();
+        carriedVal.textContent = state.carriedCredit.toLocaleString();
+
+        // decision
+        decisionBox.style.display = "block";
+        decisionText.textContent = state.decision;
+        smartNote.textContent = state.smartNote || "";
+
+        // accountant
+        if (state.accountantSteps) {
+          accountantBox.style.display = "block";
+          accountantSteps.innerHTML = state.accountantSteps;
+        } else {
+          accountantBox.style.display = "none";
+          accountantSteps.innerHTML = "";
+        }
+
+        updateChart(isNaN(state.tax3) ? 0 : state.tax3, state.tax91After);
+      }
+
+      // smart notes generator
+      function generateSmartNote(state) {
+        let parts = [];
+        if (state.netIncome <= state.exemption)
+          parts.push("الدخل أقل من الإعفاء → لا توجد ضريبة وفق قانون 91.");
+        if (!isNaN(state.tax3) && state.tax3 === 1000)
+          parts.push("حجم أعمالك صغير؛ ضريبة ثابتة بمادة 3 = 1000 ج.");
+        if (
+          !isNaN(state.tax3) &&
+          state.tax3 > 0 &&
+          state.tax3 < state.tax91After
+        )
+          parts.push("لمادة 3 ميزة ضريبية في هذه الحالة.");
+        if (state.carriedCredit > 0)
+          parts.push(
+            "يوجد رصيد دائن مرحّل للسنة القادمة — يمكن تعويضه مستقبلًا."
+          );
+        return parts.join(" ");
+      }
+
+      function generateAccountantSteps(state) {
+        let steps = [];
+        steps.push(
+          `<div>1) حساب صافي الدخل = رقم الأعمال × نسبة الربح = ${state.gross.toLocaleString()} × ${(
+            state.perc * 100
+          ).toLocaleString()}% = ${Math.ceil(
+            state.netIncome
+          ).toLocaleString()} جنيه.</div>`
+        );
+        steps.push(
+          `<div>2) الإعفاء (${
+            state.year
+          }) = ${state.exemption.toLocaleString()} جنيه → الدخل الخاضع = ${Math.ceil(
+            state.taxable
+          ).toLocaleString()} جنيه.</div>`
+        );
+        steps.push(
+          `<div>3) حساب شرائح قانون 91 → الضريبة قبل الخصم = ${state.tax91Before.toLocaleString()} جنيه.</div>`
+        );
+        steps.push(
+          `<div>4) خصم المبالغ المخصومة (${state.deduction.toLocaleString()}) → صافي الضريبة = ${state.tax91After.toLocaleString()} جنيه.</div>`
+        );
+        steps.push(
+          `<div>5) حساب مادة 3 حسب حجم الأعمال → ضريبة مادة 3 = ${
+            isNaN(state.tax3)
+              ? "غير متاحة"
+              : state.tax3.toLocaleString() + " جنيه"
+          }.</div>`
+        );
+        steps.push(`<div>6) القرار: ${state.decision}.</div>`);
+        return steps.join("");
+      }
+
+      // -------------------------
+      // Main calculate flow
+      // -------------------------
+      function calculateAndShow({ saveToHistory = false } = {}) {
+        calcBtn.classList.add("loading");
+        setTimeout(() => {
+          // small animation feel
+          // read inputs
+          let gross = safeNum(grossInput.value);
+          let perc = safeNum(percInput.value) / 100;
+          const year = Number(yearSelect.value);
+          let deduction = hasDeduction.checked
+            ? safeNum(deductionInput.value)
+            : 0;
+
+          // validation
+          if (gross < 0 || perc < 0 || isNaN(year)) {
+            resultCard.querySelector(
+              "#basicBox"
+            ).innerHTML = `<div class="muted">من فضلك أدخل قيم صحيحة (غير سالبة).</div>`;
+            calcBtn.classList.remove("loading");
+            return;
+          }
+          if (perc === 0) {
+            // allow 0% but show note
+          }
+          // compute
+          let netIncome = gross * perc;
+          if (netIncome < 0) netIncome = 0;
+          const tax3 = calcTax3(gross); // number or NaN
+          const law91 = calcLaw91(netIncome, year);
+          const tax91Before =
+            law91.taxBeforeDeduction || law91.taxBeforeDeduction === 0
+              ? law91.taxBeforeDeduction
+              : 0;
+          const exemption = law91.exemption || 0;
+          const taxable = law91.taxable || 0;
+
+          // apply deduction
+          let tax91After = tax91Before - deduction;
+          let carriedCredit = 0;
+          if (tax91After < 0) {
+            carriedCredit = Math.abs(tax91After);
+            tax91After = 0;
+          }
+
+          // decision
+          let decision = "";
+          if (!isNaN(tax3)) {
+            if (tax3 < tax91After) decision = "الأفضل: مادة 3 (الضريبة أقل)";
+            else if (tax3 > tax91After)
+              decision = "الأفضل: قانون 91 (الضريبة أقل)";
+            else decision = "كلا القانونين يعطيان نفس قيمة الضريبة";
+          } else {
+            decision = "الأفضل: قانون 91 (مادة 3 غير متاحة لحجم أعمالك)";
+          }
+
+          const state = {
+            gross,
+            perc,
+            year,
+            deduction,
+            netIncome,
+            tax3,
+            tax91Before,
+            tax91After,
+            exemption,
+            taxable,
+            carriedCredit,
+            decision,
+          };
+
+          state.smartNote = generateSmartNote(state);
+          state.accountantSteps = generateAccountantSteps(state);
+
+          // display
+          showResults(state);
+
+          // store last inputs
+          localStorage.setItem(
+            LS_KEY_INPUTS,
+            JSON.stringify({ gross, perc: perc * 100, year, deduction })
+          );
+
+          // optionally save to reports
+          if (saveToHistory) {
+            saveReportToLocal(state);
+          }
+
+          calcBtn.classList.remove("loading");
+        }, 220);
+      }
+
+      calcBtn.addEventListener("click", () => calculateAndShow());
+
+      // -------------------------
+      // Save / Reports
+      // -------------------------
+      function saveReportToLocal(state) {
+        const reports = JSON.parse(
+          localStorage.getItem(LS_KEY_REPORTS) || "[]"
+        );
+        const id = "r" + Date.now();
+        const report = {
+          id,
+          date: new Date().toISOString(),
+          data: state,
+        };
+        reports.unshift(report);
+        localStorage.setItem(LS_KEY_REPORTS, JSON.stringify(reports));
+        renderReports();
+        alert("تم حفظ التقرير محليًا");
+      }
+
+      saveReport.addEventListener("click", () => {
+        // ensure latest calculation exists: re-calc and save
+        calculateAndShow({ saveToHistory: true });
+      });
+
+      function renderReports() {
+        const reports = JSON.parse(
+          localStorage.getItem(LS_KEY_REPORTS) || "[]"
+        );
+        if (!reports.length) {
+          reportsList.innerHTML =
+            '<div class="small muted">لا توجد تقارير محفوظة.</div>';
+          return;
+        }
+        let html =
+          "<table><thead><tr><th>التاريخ</th><th>رقم الأعمال</th><th>صافي 91</th><th>إجراءات</th></tr></thead><tbody>";
+        for (const r of reports) {
+          const d = new Date(r.date);
+          html += `<tr>
+          <td>${d.toLocaleString()}</td>
+          <td>${r.data.gross.toLocaleString()}</td>
+          <td>${r.data.tax91After.toLocaleString()}</td>
+          <td>
+            <button data-id="${
+              r.id
+            }" class="chip" onclick="downloadReportPDF('${r.id}')">PDF</button>
+            <button data-id="${r.id}" class="chip" onclick="deleteReport('${
+            r.id
+          }')">حذف</button>
+          </td>
+        </tr>`;
+        }
+        html += "</tbody></table>";
+        reportsList.innerHTML = html;
+      }
+
+      window.deleteReport = function (id) {
+        let reports = JSON.parse(localStorage.getItem(LS_KEY_REPORTS) || "[]");
+        reports = reports.filter((r) => r.id !== id);
+        localStorage.setItem(LS_KEY_REPORTS, JSON.stringify(reports));
+        renderReports();
+      };
+
+      window.downloadReportPDF = async function (id) {
+        const reports = JSON.parse(
+          localStorage.getItem(LS_KEY_REPORTS) || "[]"
+        );
+        const rep = reports.find((r) => r.id === id);
+        if (!rep) {
+          alert("التقرير غير موجود");
+          return;
+        }
+        // render a temporary element and export
+        const el = document.createElement("div");
+        el.style.padding = "18px";
+        el.style.background = "#fff";
+        el.style.color = "#000";
+        el.innerHTML = `<h3>Smart Tax - Report</h3>
+        <div>التاريخ: ${new Date(rep.date).toLocaleString()}</div>
+        <div>رقم الأعمال: ${rep.data.gross.toLocaleString()}</div>
+        <div>صافي ضريبة 91 بعد الخصم: ${rep.data.tax91After.toLocaleString()}</div>
+        <div>ضريبة مادة 3: ${
+          isNaN(rep.data.tax3) ? "لا" : rep.data.tax3.toLocaleString()
+        }</div>
+      `;
+        document.body.appendChild(el);
+        await exportElementToPDF(el, `report-${id}.pdf`);
+        el.remove();
+      };
+
+      // -------------------------
+      // PDF export helpers
+      // -------------------------
+      async function exportElementToPDF(el, filename = "report.pdf") {
+        const { jsPDF } = window.jspdf;
+        // use html2canvas to render the element
+        const canvas = await html2canvas(el, { scale: 2 });
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF({
+          orientation: "portrait",
+          unit: "pt",
+          format: [canvas.width, canvas.height],
+        });
+        pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+        pdf.save(filename);
+      }
+
+      exportPdf.addEventListener("click", async () => {
+        // export resultCard content
+        const el = resultCard;
+        await exportElementToPDF(el, `smarttax-result-${Date.now()}.pdf`);
+      });
+
+      // -------------------------
+      // clear inputs
+      // -------------------------
+      clearAll.addEventListener("click", () => {
+        if (!confirm("هل تريد مسح المدخلات والنتائج؟")) return;
+        grossInput.value = "";
+        percInput.value = "";
+        deductionInput.value = "";
+        hasDeduction.checked = false;
+        deductionRow.style.display = "none";
+        localStorage.removeItem(LS_KEY_INPUTS);
+        renderEmpty();
+      });
+
+      // -------------------------
+      // load last inputs
+      // -------------------------
+      (function loadLast() {
+        const saved = JSON.parse(localStorage.getItem(LS_KEY_INPUTS) || "null");
+        if (saved) {
+          grossInput.value = saved.gross || "";
+          percInput.value = saved.perc || "";
+          yearSelect.value = saved.year || yearSelect.value;
+          if (saved.deduction && saved.deduction > 0) {
+            hasDeduction.checked = true;
+            deductionRow.style.display = "block";
+            deductionInput.value = saved.deduction;
+          }
+          // show last calc
+          calculateAndShow();
+        } else {
+          renderEmpty();
+        }
+        renderReports();
+        // load comparisons into chart if exist
+        comparisons = JSON.parse(
+          localStorage.getItem(LS_KEY_COMPARISONS) || "[]"
+        );
+        if (comparisons.length) {
+          // show aggregate on chart: last comparison sum or first item
+          const last = comparisons[comparisons.length - 1];
+          updateChart(last.tax3 || 0, last.tax91After || 0);
+        }
+      })();
+
+      // -------------------------
+      // Accountant toggle
+      // -------------------------
+      let accountantEnabled = false;
+      toggleAccountant.addEventListener("click", () => {
+        accountantEnabled = !accountantEnabled;
+        toggleAccountant.classList.toggle("chip--active");
+        toggleAccountant.style.background = accountantEnabled
+          ? "var(--primary)"
+          : "transparent";
+        toggleAccountant.style.color = accountantEnabled ? "#fff" : "inherit";
+        // On/off accountant box display
+        if (accountantEnabled) {
+          accountantBox.style.display = "block";
+        } else {
+          accountantBox.style.display = "none";
+        }
+      });
+
+      // -------------------------
+      // Comparisons (multi-year)
+      // -------------------------
+      compareYearsBtn.addEventListener("click", () => {
+        // ensure current calc is done
+        calculateAndShow();
+        // gather current state from DOM
+        // create object for comparison
+        const gross = safeNum(grossInput.value);
+        const perc = safeNum(percInput.value) / 100;
+        const year = Number(yearSelect.value);
+        const deduction = hasDeduction.checked
+          ? safeNum(deductionInput.value)
+          : 0;
+        if (!gross && perc === 0) {
+          alert("ادخل بيانات صحيحة أولا");
+          return;
+        }
+
+        // compute
+        const netIncome = gross * perc;
+        const law91 = calcLaw91(netIncome, year);
+        let tax91Before = law91.taxBeforeDeduction || 0;
+        let tax91After = tax91Before - deduction;
+        let carriedCredit = 0;
+        if (tax91After < 0) {
+          carriedCredit = Math.abs(tax91After);
+          tax91After = 0;
+        }
+
+        const tax3 = calcTax3(gross);
+
+        const obj = {
+          id: "c" + Date.now(),
+          year,
+          gross,
+          perc,
+          tax3,
+          tax91After,
+          tax91Before,
+          deduction,
+          carriedCredit,
+        };
+        comparisons.push(obj);
+        localStorage.setItem(LS_KEY_COMPARISONS, JSON.stringify(comparisons));
+        renderComparisonsChart();
+        alert("أضيفت النتيجة للمقارنة المتعددة");
+      });
+
+      clearComparisons.addEventListener("click", () => {
+        comparisons = [];
+        localStorage.removeItem(LS_KEY_COMPARISONS);
+        renderComparisonsChart();
+      });
+
+      function renderComparisonsChart() {
+        // if no comparisons: reset main chart
+        if (!comparisons.length) {
+          updateChart(0, 0);
+          return;
+        }
+        // create labels and two datasets
+        const labels = comparisons.map((c) => c.year + "");
+        const data3 = comparisons.map((c) => (isNaN(c.tax3) ? 0 : c.tax3));
+        const data91 = comparisons.map((c) => c.tax91After);
+        // replace chart with line for multiple years
+        chart.data.labels = labels;
+        chart.data.datasets = [
+          {
+            label: "مادة 3",
+            data: data3,
+            backgroundColor: "#2d9cdb",
+            type: "bar",
+          },
+          {
+            label: "قانون 91 (بعد الخصم)",
+            data: data91,
+            backgroundColor: "#6fcf97",
+            type: "bar",
+          },
+        ];
+        chart.update();
+      }
+
+      // -------------------------
+      // Export current report helper for saved reports
+      // -------------------------
+      async function buildCurrentStateForDownload() {
+        // rely on last saved inputs
+        const gross = safeNum(grossInput.value);
+        const perc = safeNum(percInput.value) / 100;
+        const year = Number(yearSelect.value);
+        const deduction = hasDeduction.checked
+          ? safeNum(deductionInput.value)
+          : 0;
+        const netIncome = gross * perc;
+        const tax3 = calcTax3(gross);
+        const law91 = calcLaw91(netIncome, year);
+        const tax91Before = law91.taxBeforeDeduction || 0;
+        let tax91After = tax91Before - deduction;
+        let carriedCredit = 0;
+        if (tax91After < 0) {
+          carriedCredit = Math.abs(tax91After);
+          tax91After = 0;
+        }
+        const decision = !isNaN(tax3)
+          ? tax3 < tax91After
+            ? "مادة 3"
+            : "قانون 91"
+          : "قانون 91";
+        return {
+          gross,
+          perc,
+          year,
+          deduction,
+          netIncome,
+          tax3,
+          tax91Before,
+          tax91After,
+          carriedCredit,
+          decision,
+        };
+      }
+
+      // -------------------------
+      // Export saved report convenience wrapper
+      // -------------------------
+      async function exportCurrentAsPDF() {
+        const state = await buildCurrentStateForDownload();
+        const el = document.createElement("div");
+        el.style.padding = "18px";
+        el.style.background = "#fff";
+        el.style.color = "#000";
+        el.innerHTML = `<h3>Smart Tax - Result</h3>
+        <div>التاريخ: ${new Date().toLocaleString()}</div>
+        <div>رقم الأعمال: ${state.gross.toLocaleString()}</div>
+        <div>صافي الدخل: ${Math.ceil(state.netIncome).toLocaleString()}</div>
+        <div>ضريبة مادة 3: ${
+          isNaN(state.tax3) ? "لا يخضع" : state.tax3.toLocaleString()
+        }</div>
+        <div>صافي ضريبة 91 بعد الخصم: ${state.tax91After.toLocaleString()}</div>
+        `;
+        document.body.appendChild(el);
+        await exportElementToPDF(el, `smarttax-${Date.now()}.pdf`);
+        el.remove();
+      }
+
+      // hook export button
+      exportPdf.addEventListener("click", exportCurrentAsPDF);
+
+      // -------------------------
+      // Export util used earlier
+      // -------------------------
+      async function exportElementToPDF(el, filename = "report.pdf") {
+        const { jsPDF } = window.jspdf;
+        const canvas = await html2canvas(el, {
+          scale: 2,
+          backgroundColor: null,
+        });
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF({
+          orientation: "portrait",
+          unit: "pt",
+          format: [canvas.width, canvas.height],
+        });
+        pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+        pdf.save(filename);
+      }
+
+      // -------------------------
+      // download saved report wrapper (global)
+      // -------------------------
+      window.downloadReportPDF =
+        window.downloadReportPDF ||
+        async function () {
+          alert("تحميل غير متاح");
+        };
+
+      // -------------------------
+      // initialization
+      // -------------------------
+      renderEmpty();
+      renderReports();
+
+      // expose a few debug/utility helpers
+      window.calculateAndShow = calculateAndShow;
+      window.exportElementToPDF = exportElementToPDF;
+
+      // end script
+    </script>
+  </body>
 </html>
